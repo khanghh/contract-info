@@ -1,4 +1,4 @@
-package parser
+package dasm
 
 import (
 	"encoding/json"
@@ -26,16 +26,6 @@ type Interface struct {
 	Elements   map[string]ABIElement // map from 4-bytes to abi element
 }
 
-func (intf *Interface) MethodIDs() []string {
-	methodIds := []string{}
-	for id, elem := range intf.Elements {
-		if elem.Type == "function" {
-			methodIds = append(methodIds, id)
-		}
-	}
-	return methodIds
-}
-
 func (intf *Interface) UnpackInput(v interface{}, name string, data []byte) error {
 	var args abi.Arguments
 	if method, exist := intf.Methods[name]; exist {
@@ -59,14 +49,15 @@ func NewInterface(name string, elems []ABIElement) (Interface, error) {
 	events := make(map[string]abi.Event)
 	elements := make(map[string]ABIElement)
 	for _, item := range elems {
-		elements[FourBytesSigOf(item.Identifier())] = item
 		switch item.Type {
 		case "function":
 			name := abi.ResolveNameConflict(item.Name, func(s string) bool { _, ok := methods[s]; return ok })
 			methods[name] = abi.NewMethod(name, item.Name, abi.Function, item.StateMutability, false, false, item.Inputs, item.Outputs)
+			elements[common.Bytes2Hex(crypto.Keccak256([]byte(item.Identifier()))[:4])] = item
 		case "event":
 			name := abi.ResolveNameConflict(item.Name, func(s string) bool { _, ok := events[s]; return ok })
 			events[name] = abi.NewEvent(name, item.Name, item.Anonymous, item.Inputs)
+			elements[common.Bytes2Hex(crypto.Keccak256([]byte(item.Identifier())))] = item
 		default:
 			return Interface{}, fmt.Errorf("invalid abi entry type: %v", item.Type)
 		}

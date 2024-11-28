@@ -1,4 +1,4 @@
-.PHONY: clean impl
+.PHONY: clean impl dasm
 
 .DEFAULT_GOAL := impl
 
@@ -19,6 +19,11 @@ LDFLAGS:=-ldflags="$(LDFLAGS)"
 GCFLAGS:=-gcflags="$(GCFLAGS)"
 
 impl:
+	@echo "Building target: $@" 
+	go build $(LDFLAGS) $(GCFLAGS) -o $(BUILD_DIR)/$@ $(CURDIR)/cmd/$@
+	@echo "Done building."
+
+dasm:
 	@echo "Building target: $@" 
 	go build $(LDFLAGS) $(GCFLAGS) -o $(BUILD_DIR)/$@ $(CURDIR)/cmd/$@
 	@echo "Done building."
