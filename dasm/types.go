@@ -58,6 +58,10 @@ func NewInterface(name string, elems []ABIElement) (Interface, error) {
 			name := abi.ResolveNameConflict(item.Name, func(s string) bool { _, ok := events[s]; return ok })
 			events[name] = abi.NewEvent(name, item.Name, item.Anonymous, item.Inputs)
 			elements[common.Bytes2Hex(crypto.Keccak256([]byte(item.Identifier())))] = item
+		case "constructor":
+		case "fallback":
+		case "receive":
+		case "error":
 		default:
 			return Interface{}, fmt.Errorf("invalid abi entry type: %v", item.Type)
 		}

@@ -24,7 +24,7 @@ func ParseEventTopics(bytecode []byte) []string {
 	matchFn := opAnyOf(vm.LOG0, vm.LOG1, vm.LOG2, vm.LOG3, vm.LOG4)
 	for it.Next() {
 		if matchFn(it.Instruction()) {
-			push32Ins := findPush32(it.ins, 20)
+			push32Ins := findPush32(it.ins, 50)
 			if push32Ins != nil {
 				topic := hex.EncodeToString(common.BytesToHash(push32Ins.arg).Bytes())
 				topics[topic] = true
