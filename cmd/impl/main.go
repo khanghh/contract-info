@@ -160,12 +160,15 @@ func run(cli *cli.Context) error {
 		return fmt.Errorf("could not get contract bytecode from rpc: %w", err)
 	}
 
+	isProxy := dasm.IsProxy(bytecode)
 	infos := make([][]string, 0)
 	infos = append(infos, []string{"Address", addr.Hex()})
-	infos = append(infos, []string{"Is Proxy Contract", strconv.FormatBool(dasm.IsProxy(bytecode))})
-	proxyImplAddr, err := getProxyImplementation(client, addr)
-	if err == nil {
-		infos = append(infos, []string{"Implementation Address", proxyImplAddr.Hex()})
+	infos = append(infos, []string{"Is Proxy Contract", strconv.FormatBool(isProxy)})
+	if isProxy {
+		proxyImplAddr, err := getProxyImplementation(client, addr)
+		if err == nil && (proxyImplAddr != common.Address{}) {
+			infos = append(infos, []string{"Implementation Address", proxyImplAddr.Hex()})
+		}
 	}
 
 	methodIDs := dasm.ParseFunctionSelectors(bytecode)
