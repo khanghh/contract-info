@@ -10,6 +10,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/khanghh/contract-info/dasm"
 	"github.com/olekukonko/tablewriter"
@@ -78,6 +79,27 @@ func ethGetCode(client *rpc.Client, addr common.Address) ([]byte, error) {
 	return result, nil
 }
 
+func ethStorageAt(client *rpc.Client, addr common.Address, slot common.Hash) ([]byte, error) {
+	var result hexutil.Bytes
+	err := client.Call(&result, "eth_getStorageAt", addr, slot, "latest")
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func getProxyImplementation(client *rpc.Client, proxyAddr common.Address) (common.Address, error) {
+	implementationSlot := crypto.Keccak256Hash([]byte("eip1967.proxy.implementation"))
+	implementationSlot[len(implementationSlot)-1] = implementationSlot[len(implementationSlot)-1] - 1
+	ret, err := ethStorageAt(client, proxyAddr, implementationSlot)
+	if err != nil {
+		return common.Address{}, nil
+	}
+	var implAddr common.Address
+	copy(implAddr[:], ret[12:])
+	return implAddr, nil
+}
+
 func printContractInfo(data [][]string) {
 	fmt.Println("Contract information:")
 	table := tablewriter.NewWriter(os.Stdout)
@@ -96,6 +118,14 @@ func renderMethodList(methodIDsMap map[string][]string) string {
 		methodList = append(methodList, fmt.Sprintf("- %s %s", methodID, strings.Join(methodSigs, ",")))
 	}
 	return strings.Join(methodList, "\n")
+}
+
+func renderInterfaceList(interfaceNames []string) string {
+	interfaceList := make([]string, 0)
+	for _, intfName := range interfaceNames {
+		interfaceList = append(interfaceList, fmt.Sprintf("- %s", intfName))
+	}
+	return strings.Join(interfaceList, "\n")
 }
 
 func getContractInterfaces(intefaces []dasm.Interface, sigs []string) []string {
@@ -132,14 +162,13 @@ func run(cli *cli.Context) error {
 
 	infos := make([][]string, 0)
 	infos = append(infos, []string{"Address", addr.Hex()})
-	infos = append(infos, []string{"Is Proxy", strconv.FormatBool(dasm.IsProxy(bytecode))})
+	infos = append(infos, []string{"Is Proxy Contract", strconv.FormatBool(dasm.IsProxy(bytecode))})
+	proxyImplAddr, err := getProxyImplementation(client, addr)
+	if err == nil {
+		infos = append(infos, []string{"Implementation Address", proxyImplAddr.Hex()})
+	}
 
 	methodIDs := dasm.ParseFunctionSelectors(bytecode)
-	// toPrintMethodSigs := make([]string, len(methodSigs))
-	// for i, topic := range methodSigs {
-	// 	toPrintMethodSigs[i] = "- " + topic
-	// 	// sigs = append(sigs, topic)
-	// }
 	methodIDsMap := make(map[string][]string)
 	for _, methodID := range methodIDs {
 		methodIDsMap[methodID] = dasm.GetMethodSigsByID(methodID, interfaces)
@@ -150,21 +179,8 @@ func run(cli *cli.Context) error {
 	infos = append(infos, []string{"Poissible Events", strings.Join(topics, "\n")})
 	contractInterfaces := getContractInterfaces(interfaces, append(methodIDs, topics...))
 	if len(contractInterfaces) > 0 {
-		infos = append(infos, []string{"Possible Interfaces", strings.Join(contractInterfaces, ",")})
+		infos = append(infos, []string{"Possible Interfaces", renderInterfaceList(contractInterfaces)})
 	}
-
-	// fmt.Println("Possible contract implentations:")
-	// count := 1
-	// for _, intf := range interfaces {
-	// 	if dasm.IsImplement(intf, sigs) {
-	// 		fmt.Printf("%d. %s\n", count, intf.Name)
-	// 		for sig := range intf.Elements {
-	// 			fmt.Printf("  - %s\n", sig)
-	// 		}
-	// 		count++
-	// 	}
-	// }
-
 	printContractInfo(infos)
 	return nil
 }
