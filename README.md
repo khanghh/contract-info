@@ -71,7 +71,24 @@ Poissible Events    ddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523
                     8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925
 Possible Interfaces ERC20
 ```
-
+```bash
+$ ./impl 0x411D79b8cC43384FDE66CaBf9b6a17180c842511
+Loaded 7 interface ABIs
+Fetching contract bytecode...
+Contract information:
+Address                0x411D79b8cC43384FDE66CaBf9b6a17180c842511                       
+Is Proxy Contract      true                                                             
+Implementation Address 0x7a68e572eFE159753813eB86A8c84157d684bda2                       
+Poissible Methods      - 5c60da1b implementation()                                      
+                       - 8f283970 changeAdmin(address)                                  
+                       - f851a440 admin()                                               
+                       - 3659cfe6 upgradeTo(address)                                    
+                       - 4f1ef286 upgradeToAndCall(address,bytes)                       
+Poissible Events       7e644d79422f17c01e4894b5f4f588d331ebfa28653d42ae832dc59e38c9798f 
+                       bc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b 
+Possible Interfaces    - BaseAdminUpgradeabilityProxy                                   
+                       - BaseUpgradeabilityProxy 
+```
 ## Contributing
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
